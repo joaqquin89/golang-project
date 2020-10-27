@@ -40,9 +40,6 @@ func GetPeopleEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	for scanner.Scan() {
 		fmt.Println("------------------")
-		//fmt.Println(scanner.Text())
-		//fmt.Println(scanner.Text())
-		//json.NewEncoder(w).Encode(scanner.Text())
 		dec := json.NewDecoder(strings.NewReader(scanner.Text()))
 		for {
 			var doc Person
@@ -61,15 +58,29 @@ func GetPeopleEndpoint(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func GetPersonEdpoint(w http.ResponseWriter, req *http.Request) {
+func GetPersonEndpoint(w http.ResponseWriter, req *http.Request) {
 
+	params := mux.Vars(req)
+	for _, item := range people {
+		if item.ID == params["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+		json.NewEncoder(w).Encode(&Person{})
+	}
 }
 
-func CreatePersonEdpoint(w http.ResponseWriter, req *http.Request) {
-
+func CreatePersonEndpoint(w http.ResponseWriter, req *http.Request) {
+	params := mux.Vars(req)
+	var person Person
+	fmt.Println(params)
+	_ = json.NewDecoder(req.Body).Decode(&person)
+	person.ID = params["id"]
+	people = append(people, person)
+	json.NewEncoder(w).Encode(people)
 }
 
-func DeletePersonEdpoint(w http.ResponseWriter, req *http.Request) {
+func DeletePersonEndpoint(w http.ResponseWriter, req *http.Request) {
 
 }
 
@@ -102,7 +113,6 @@ func main() {
 			panic(err)
 		}
 		str := string(b)
-		//fmt.Println(str)
 		// //check whether s contains substring text
 		fmt.Println(strings.Contains(str, string(out)))
 		if strings.Contains(str, string(out)) == false {
@@ -118,14 +128,13 @@ func main() {
 		}
 
 	}
-
-	fmt.Println("done")
+	*fmt.Println("done")
 
 	//endpoints
 	router.HandleFunc("/people", GetPeopleEndpoint).Methods("GET")
-	router.HandleFunc("/people/{id}", GetPersonEdpoint).Methods("GET")
-	router.HandleFunc("/people/{id}", CreatePersonEdpoint).Methods("POST")
-	router.HandleFunc("/people/{id}", DeletePersonEdpoint).Methods("DELETE")
+	router.HandleFunc("/people/{id}", GetPersonEndpoint).Methods("GET")
+	router.HandleFunc("/people/{id}", CreatePersonEndpoint).Methods("POST")
+	router.HandleFunc("/people/{id}", DeletePersonEndpoint).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":3000", router))
 }
